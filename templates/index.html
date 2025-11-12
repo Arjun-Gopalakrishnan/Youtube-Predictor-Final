@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influencer Popularity Predictor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Roboto', 'Poppins', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow-y: auto; 
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f4f4f4; 
+        }
+
+        .page-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* --- 1. Cover Page Styles --- */
+        #coverPage { }
+        
+        .cover-content {
+            background: #FFFFFF;
+            padding: 50px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+        .cover-content h1 { font-size: 2rem; color: #333; margin-bottom: 10px; }
+        .cover-content p { font-size: 1.1rem; color: #666; margin-bottom: 30px; }
+        .yt-icon { width: 80px; height: auto; margin-bottom: 20px; fill: #FF0000; }
+        #startButton {
+            background-color: #FF0000; color: #FFFFFF; font-family: 'Roboto', sans-serif;
+            font-weight: 700; font-size: 1rem; border: none; padding: 14px 30px;
+            border-radius: 8px; cursor: pointer; transition: background-color 0.3s ease;
+        }
+        #startButton:hover { background-color: #c90000; }
+
+        /* --- 2. Main App Page Styles --- */
+        #mainAppPage { display: none; }
+        {% if prediction_text %}
+        #coverPage { display: none !important; }
+        #mainAppPage { display: flex !important; }
+        {% endif %}
+
+        .form-container {
+            background: #FFFFFF;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-width: 600px; /* Made slightly wider for tabs */
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px; /* Reduced margin */
+        }
+        .app-header .yt-icon { width: 40px; height: auto; margin-bottom: 0; }
+        .app-header h2 { font-size: 1.8rem; color: #111; margin: 0; font-weight: 700; }
+        
+        /* --- NEW: Tab Navigation --- */
+        .tab-nav {
+            display: flex;
+            border-bottom: 2px solid #EEE;
+            margin-bottom: 30px;
+        }
+        .tab-btn {
+            font-family: 'Roboto', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #888;
+            background: none;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px; /* Sits on top of the border */
+        }
+        .tab-btn.active {
+            color: #FF0000; /* YouTube Red */
+            border-bottom-color: #FF0000;
+        }
+        
+        /* --- Tab Content Containers --- */
+        .tab-content {
+            text-align: left;
+        }
+        #predictorContent {
+            /* Shown by default */
+        }
+        #dashboardContent {
+            display: none; /* Hidden by default */
+            text-align: center;
+        }
+        
+        /* --- Form Styles --- */
+        .form-box { width: 100%; text-align: left; }
+        .input-group { margin-bottom: 18px; text-align: left; }
+        label {
+            display: block; margin-bottom: 8px; font-weight: 700; 
+            font-size: 0.9rem; color: #555555; 
+        }
+        input[type="number"], select {
+            width: 100%; padding: 12px 14px; border-radius: 8px;
+            border: 1px solid #DDD; font-size: 1rem;
+            font-family: 'Roboto', sans-serif; box-sizing: border-box;
+            color: #333; background: #f9f9f9; 
+        }
+        input[readonly] { background-color: #EAEAEA; color: #555; font-weight: 500; }
+        select {
+            appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="black" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat; background-position-x: 98%; background-position-y: 50%;
+        }
+        input::placeholder { color: #AAA; }
+
+        .btn-predict {
+            width: 100%; background-color: #FF0000; color: #FFFFFF;
+            border: none; padding: 14px; font-size: 1rem;
+            font-family: 'Roboto', sans-serif; font-weight: 700;
+            border-radius: 8px; cursor: pointer;
+            transition: background-color 0.3s ease; margin-top: 10px;
+        }
+        .btn-predict:hover { background-color: #c90000; }
+
+        .result-box {
+            margin-top: 30px; padding: 20px; background-color: #e6fffa;
+            border-radius: 8px; border: 1px solid #38b2ac;
+        }
+        .result-box h2 {
+            margin: 0; font-size: 1.3rem; font-weight: 700; color: #234e52;
+        }
+    </style>
+</head>
+<body>
+    
+    <svg width="0" height="0" style="position:absolute;">
+      <symbol id="yt-play-icon" viewBox="0 0 24 24">
+        <path fill="#FF0000" d="M21.582,6.186c-0.232-0.865-0.902-1.536-1.767-1.767C18.267,4,12,4,12,4S5.733,4,4.185,4.419 c-0.865,0.232-1.536,0.902-1.767,1.767C2,7.733,2,12,2,12s0,4.267,0.419,5.815c0.232,0.865,0.902,1.536,1.767,1.767 C5.733,20,12,20,12,20s6.267,0,7.815-0.419c0.865-0.232,1.536-0.902,1.767-1.767C22,16.267,22,12,22,12S22,7.733,21.582,6.186z M9.927,15.546V8.454l6.021,3.546L9.927,15.546z"></path>
+      </symbol>
+    </svg>
+
+    <!-- ======== PAGE 1: COVER PAGE ======== -->
+    <div id="coverPage" class="page-container">
+        <div class="cover-content">
+            <svg class="yt-icon"><use xlink:href="#yt-play-icon"></use></svg>
+            <h1>Influencer Popularity Predictor</h1>
+            <p>Use Machine Learning to estimate the view count of a Malayalam Tech YouTuber.</p>
+            <button id="startButton">Start Predicting</button>
+        </div>
+    </div>
+
+    <!-- ======== PAGE 2: MAIN APP ======== -->
+    <div id="mainAppPage" class="page-container">
+        <div class="form-container">
+            <div class="app-header">
+                <svg class="yt-icon"><use xlink:href="#yt-play-icon"></use></svg>
+                <h2>View Count Predictor</h2>
+            </div>
+            
+            <!-- NEW: Tab Navigation -->
+            <div class="tab-nav">
+                <button id="navAppBtn" class="tab-btn active">Predictor</button>
+                <button id="navDashboardBtn" class="tab-btn">Dashboard</button>
+            </div>
+
+            <!-- --- Tab 1: Predictor --- -->
+            <div id="predictorContent" class="tab-content">
+                <form action="/predict" method="post" class="form-box">
+                    <div class="input-group">
+                        <label for="channel_name">Channel Name</label>
+                        <select id="channel_name" name="channel_name" required>
+                            <option value="" disabled selected>Select a Channel</option>
+                            {% if channel_names %}
+                                {% for channel in channel_names %}
+                                    <option value="{{ channel }}" {% if request.form.get('channel_name') == channel %}selected{% endif %}>{{ channel }}</option>
+                                {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="subscribers">Subscribers</label>
+                        <input type="number" id="subscribers" name="subscribers" placeholder="e.g., 500000" value="{{ request.form.get('subscribers', '') }}" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="video_count">Total Videos</label>
+                        <input type="number" id="video_count_input" name="video_count" placeholder="e.g., 350" value="{{ request.form.get('video_count', '') }}" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="account_age">Account Age (Years)</label>
+                        <input type="number" step="0.1" id="account_age_input" name="account_age" placeholder="e.g., 4.5" value="{{ request.form.get('account_age', '') }}" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="post_frequency_per_year">Post Frequency / Year (Auto-Calculated)</label>
+                        <input type="number" step="0.01" id="post_frequency_input" name="post_frequency_per_year" placeholder="Calculated automatically..." value="{{ request.form.get('post_frequency_per_year', '') }}" required readonly>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="like_count">Average Likes</label>
+                        <input type="number" id="like_count" name="like_count" placeholder="e.g., 2500" value="{{ request.form.get('like_count', '') }}" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="comment_count">Average Comments</label>
+                        <input type="number" id="comment_count" name="comment_count" placeholder="e.g., 300" value="{{ request.form.get('comment_count', '') }}" required>
+                    </div>
+
+                    <button type="submit" class="btn-predict">Predict View Count</button>
+                </form>
+
+                {% if prediction_text %}
+                <div class="result-box">
+                    <h2>{{ prediction_text }}</h2>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- --- Tab 2: Dashboard --- -->
+            <div id="dashboardContent" class="tab-content">
+                
+                <!-- === THIS IS THE ONLY PART I CHANGED === -->
+                <!-- I deleted the placeholder and pasted your Tableau code -->
+                <div class='tableauPlaceholder' id='viz1762964571111' style='position: relative'><noscript><a href='#'><img alt='Dashboard 1 ' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Yo&#47;YoutubeProject_17629643796770&#47;Dashboard1&#47;1_rss.png' style='border: none' /></a></noscript><object class='tableauViz'  style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' /> <param name='embed_code_version' value='3' /> <param name='site_root' value='' /><param name='name' value='YoutubeProject_17629643796770&#47;Dashboard1' /><param name='tabs' value='no' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Yo&#47;YoutubeProject_17629643796770&#47;Dashboard1&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /><param name='language' value='en-US' /></object></div>                <script type='text/javascript'>                    var divElement = document.getElementById('viz1762964571111');                    var vizElement = divElement.getElementsByTagName('object')[0];                    if ( divElement.offsetWidth > 800 ) { vizElement.style.minWidth='420px';vizElement.style.maxWidth='650px';vizElement.style.width='100%';vizElement.style.minHeight='587px';vizElement.style.maxHeight='887px';vizElement.style.height=(divElement.offsetWidth*0.75)+'px';} else if ( divElement.offsetWidth > 500 ) { vizElement.style.minWidth='420px';vizElement.style.maxWidth='650px';vizElement.style.width='100%';vizElement.style.minHeight='587px';vizElement.style.maxHeight='887px';vizElement.style.height=(divElement.offsetWidth*0.75)+'px';} else { vizElement.style.width='100%';vizElement.style.height='727px';}                   var scriptElement = document.createElement('script');                    scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';                    vizElement.parentNode.insertBefore(scriptElement, vizElement);                </script>
+                <!-- === END OF THE CHANGE === -->
+
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- Page Switching ---
+        const coverPage = document.getElementById('coverPage');
+        const mainAppPage = document.getElementById('mainAppPage');
+        const startButton = document.getElementById('startButton');
+
+        startButton.addEventListener('click', () => {
+            coverPage.style.display = 'none';
+            mainAppPage.style.display = 'flex'; 
+        });
+
+        // --- NEW: Tab Switching ---
+        const navAppBtn = document.getElementById('navAppBtn');
+        const navDashboardBtn = document.getElementById('navDashboardBtn');
+        const predictorContent = document.getElementById('predictorContent');
+        const dashboardContent = document.getElementById('dashboardContent');
+
+        navAppBtn.addEventListener('click', () => {
+            // Show predictor
+            predictorContent.style.display = 'block';
+            dashboardContent.style.display = 'none';
+            // Set active tab
+            navAppBtn.classList.add('active');
+            navDashboardBtn.classList.remove('active');
+        });
+
+        navDashboardBtn.addEventListener('click', () => {
+            // Show dashboard
+            predictorContent.style.display = 'none';
+            dashboardContent.style.display = 'block';
+            // Set active tab
+            navAppBtn.classList.remove('active');
+            navDashboardBtn.classList.add('active');
+        });
+        
+        // --- Auto-Calculation ---
+        const videoCountInput = document.getElementById('video_count_input');
+        const accountAgeInput = document.getElementById('account_age_input');
+        const postFrequencyInput = document.getElementById('post_frequency_input');
+
+        function updateFrequency() {
+            const videos = parseFloat(videoCountInput.value);
+            const age = parseFloat(accountAgeInput.value);
+
+            if (videos && videos > 0 && age && age > 0) {
+                const frequency = videos / age;
+                postFrequencyInput.value = frequency.toFixed(2);
+            } else {
+                if (document.activeElement === videoCountInput || document.activeElement === accountAgeInput) {
+                     postFrequencyInput.value = '';
+                }
+            }
+        }
+        
+        videoCountInput.addEventListener('input', updateFrequency);
+        accountAgeInput.addEventListener('input', updateFrequency);
+        
+        // --- Keep calculated value on load ---
+        // Run this one time when the page loads
+        updateFrequency();
+        
+        // --- CRITICAL FIX FOR RELOAD ---
+        // If a prediction exists, stay on the main page
+        {% if prediction_text %}
+            coverPage.style.display = 'none';
+            mainAppPage.style.display = 'flex';
+        {% endif %}
+
+    </script>
+
+</body>
+</html>
