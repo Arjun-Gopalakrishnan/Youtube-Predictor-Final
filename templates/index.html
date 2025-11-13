@@ -8,7 +8,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
         body {
-            font-family: 'Roboto', 'Poppins', sans-serif;
+            font-family: 'Roboto', sans-serif;
             text-align: center;
             margin: 0;
             padding: 0;
@@ -17,7 +17,23 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background-color: #f4f4f4; 
+            background-color: #000; /* Dark background while video loads */
+            /* Will change to #f4f4f4 when app is active */
+            transition: background-color 0.5s ease;
+        }
+
+        /* --- YOUR LOCAL VIDEO BACKGROUND --- */
+        #bgVideo {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+            z-index: -1;
+            object-fit: cover;
+            filter: brightness(0.6);
+            /* Add a fade-out transition */
+            transition: opacity 0.5s ease-out;
         }
 
         .page-container {
@@ -28,18 +44,21 @@
             justify-content: center;
             padding: 20px;
             box-sizing: border-box;
+            perspective: 1000px; /* Needed for 3D effect */
         }
 
         /* --- 1. Cover Page Styles --- */
         #coverPage { }
         
         .cover-content {
-            background: #FFFFFF;
+            background: rgba(255, 255, 255, 0.95);
             padding: 50px;
             border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             max-width: 500px;
             width: 100%;
+            /* Animation */
+            transition: transform 0.1s;
         }
         .cover-content h1 { font-size: 2rem; color: #333; margin-bottom: 10px; }
         .cover-content p { font-size: 1.1rem; color: #666; margin-bottom: 30px; }
@@ -53,19 +72,25 @@
 
         /* --- 2. Main App Page Styles --- */
         #mainAppPage { display: none; }
+        
+        /* If prediction exists, show app and hide cover */
         {% if prediction_text %}
         #coverPage { display: none !important; }
         #mainAppPage { display: flex !important; }
+        /* Also, if prediction exists, set the background to gray immediately */
+        body { background-color: #f4f4f4; }
+        #bgVideo { display: none; }
         {% endif %}
 
         .form-container {
-            background: #FFFFFF;
+            background: #FFFFFF; /* Solid white, no transparency */
             padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            max-width: 600px; /* Made slightly wider for tabs */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); /* More subtle shadow */
+            max-width: 600px;
             width: 100%;
             box-sizing: border-box;
+            /* Tilt transition is REMOVED */
         }
 
         .app-header {
@@ -73,12 +98,11 @@
             align-items: center;
             justify-content: center;
             gap: 15px;
-            margin-bottom: 20px; /* Reduced margin */
+            margin-bottom: 20px;
         }
         .app-header .yt-icon { width: 40px; height: auto; margin-bottom: 0; }
         .app-header h2 { font-size: 1.8rem; color: #111; margin: 0; font-weight: 700; }
         
-        /* --- NEW: Tab Navigation --- */
         .tab-nav {
             display: flex;
             border-bottom: 2px solid #EEE;
@@ -94,31 +118,22 @@
             padding: 10px 20px;
             cursor: pointer;
             border-bottom: 3px solid transparent;
-            margin-bottom: -2px; /* Sits on top of the border */
+            margin-bottom: -2px;
         }
         .tab-btn.active {
-            color: #FF0000; /* YouTube Red */
+            color: #FF0000; 
             border-bottom-color: #FF0000;
         }
         
-        /* --- Tab Content Containers --- */
-        .tab-content {
-            text-align: left;
-        }
-        #predictorContent {
-            /* Shown by default */
-        }
-        #dashboardContent {
-            display: none; /* Hidden by default */
-            text-align: center;
-        }
+        .tab-content { text-align: left; }
+        #predictorContent { }
+        #dashboardContent { display: none; text-align: center; }
         
-        /* --- Form Styles --- */
         .form-box { width: 100%; text-align: left; }
         .input-group { margin-bottom: 18px; text-align: left; }
         label {
             display: block; margin-bottom: 8px; font-weight: 700; 
-            font-size: 0.9rem; color: #555555; 
+            font-size: 0.9rem; color: #333; /* Dark readable label */
         }
         input[type="number"], select {
             width: 100%; padding: 12px 14px; border-radius: 8px;
@@ -160,9 +175,14 @@
       </symbol>
     </svg>
 
-    <!-- ======== PAGE 1: COVER PAGE ======== -->
+    <!-- === YOUR LOCAL VIDEO FROM STATIC FOLDER === -->
+    <video autoplay muted loop id="bgVideo">
+        <source src="{{ url_for('static', filename='my_background.mp4') }}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
     <div id="coverPage" class="page-container">
-        <div class="cover-content">
+        <div class="cover-content" id="tiltCard1">
             <svg class="yt-icon"><use xlink:href="#yt-play-icon"></use></svg>
             <h1>Influencer Popularity Predictor</h1>
             <p>Use Machine Learning to estimate the view count of a Malayalam Tech YouTuber.</p>
@@ -170,21 +190,18 @@
         </div>
     </div>
 
-    <!-- ======== PAGE 2: MAIN APP ======== -->
     <div id="mainAppPage" class="page-container">
-        <div class="form-container">
+        <div class="form-container" id="tiltCard2"> <!-- tiltCard2 is still here, but JS won't target it -->
             <div class="app-header">
                 <svg class="yt-icon"><use xlink:href="#yt-play-icon"></use></svg>
                 <h2>View Count Predictor</h2>
             </div>
             
-            <!-- NEW: Tab Navigation -->
             <div class="tab-nav">
                 <button id="navAppBtn" class="tab-btn active">Predictor</button>
                 <button id="navDashboardBtn" class="tab-btn">Dashboard</button>
             </div>
 
-            <!-- --- Tab 1: Predictor --- -->
             <div id="predictorContent" class="tab-content">
                 <form action="/predict" method="post" class="form-box">
                     <div class="input-group">
@@ -239,14 +256,9 @@
                 {% endif %}
             </div>
             
-            <!-- --- Tab 2: Dashboard --- -->
             <div id="dashboardContent" class="tab-content">
-                
-                <!-- === THIS IS THE ONLY PART I CHANGED === -->
-                <!-- I deleted the placeholder and pasted your Tableau code -->
+                <!-- PASTE YOUR TABLEAU/POWER BI CODE HERE -->
                 <div class='tableauPlaceholder' id='viz1762964571111' style='position: relative'><noscript><a href='#'><img alt='Dashboard 1 ' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Yo&#47;YoutubeProject_17629643796770&#47;Dashboard1&#47;1_rss.png' style='border: none' /></a></noscript><object class='tableauViz'  style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' /> <param name='embed_code_version' value='3' /> <param name='site_root' value='' /><param name='name' value='YoutubeProject_17629643796770&#47;Dashboard1' /><param name='tabs' value='no' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Yo&#47;YoutubeProject_17629643796770&#47;Dashboard1&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /><param name='language' value='en-US' /></object></div>                <script type='text/javascript'>                    var divElement = document.getElementById('viz1762964571111');                    var vizElement = divElement.getElementsByTagName('object')[0];                    if ( divElement.offsetWidth > 800 ) { vizElement.style.minWidth='420px';vizElement.style.maxWidth='650px';vizElement.style.width='100%';vizElement.style.minHeight='587px';vizElement.style.maxHeight='887px';vizElement.style.height=(divElement.offsetWidth*0.75)+'px';} else if ( divElement.offsetWidth > 500 ) { vizElement.style.minWidth='420px';vizElement.style.maxWidth='650px';vizElement.style.width='100%';vizElement.style.minHeight='587px';vizElement.style.maxHeight='887px';vizElement.style.height=(divElement.offsetWidth*0.75)+'px';} else { vizElement.style.width='100%';vizElement.style.height='727px';}                   var scriptElement = document.createElement('script');                    scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';                    vizElement.parentNode.insertBefore(scriptElement, vizElement);                </script>
-                <!-- === END OF THE CHANGE === -->
-
             </div>
 
         </div>
@@ -257,32 +269,35 @@
         const coverPage = document.getElementById('coverPage');
         const mainAppPage = document.getElementById('mainAppPage');
         const startButton = document.getElementById('startButton');
+        const bgVideo = document.getElementById('bgVideo'); // Get the video
 
         startButton.addEventListener('click', () => {
             coverPage.style.display = 'none';
-            mainAppPage.style.display = 'flex'; 
+            mainAppPage.style.display = 'flex';
+            
+            // --- NEW: Hide video and change background ---
+            if (bgVideo) {
+                bgVideo.style.opacity = '0'; // Fade out video
+            }
+            document.body.style.backgroundColor = '#f4f4f4'; // Change body background
         });
 
-        // --- NEW: Tab Switching ---
+        // --- Tab Switching ---
         const navAppBtn = document.getElementById('navAppBtn');
         const navDashboardBtn = document.getElementById('navDashboardBtn');
         const predictorContent = document.getElementById('predictorContent');
         const dashboardContent = document.getElementById('dashboardContent');
 
         navAppBtn.addEventListener('click', () => {
-            // Show predictor
             predictorContent.style.display = 'block';
             dashboardContent.style.display = 'none';
-            // Set active tab
             navAppBtn.classList.add('active');
             navDashboardBtn.classList.remove('active');
         });
 
         navDashboardBtn.addEventListener('click', () => {
-            // Show dashboard
             predictorContent.style.display = 'none';
             dashboardContent.style.display = 'block';
-            // Set active tab
             navAppBtn.classList.remove('active');
             navDashboardBtn.classList.add('active');
         });
@@ -308,17 +323,28 @@
         
         videoCountInput.addEventListener('input', updateFrequency);
         accountAgeInput.addEventListener('input', updateFrequency);
-        
-        // --- Keep calculated value on load ---
-        // Run this one time when the page loads
         updateFrequency();
         
-        // --- CRITICAL FIX FOR RELOAD ---
-        // If a prediction exists, stay on the main page
+        /*
         {% if prediction_text %}
             coverPage.style.display = 'none';
             mainAppPage.style.display = 'flex';
         {% endif %}
+        */
+
+        // --- NEW: MOUSE TILT EFFECT (Only on Cover Page) ---
+        // This array now ONLY contains the cover page card
+        const tiltCard = document.getElementById('tiltCard1');
+        
+        document.addEventListener('mousemove', (e) => {
+            const x = (window.innerWidth / 2 - e.pageX) / 25;
+            const y = (window.innerHeight / 2 - e.pageY) / 25;
+            
+            if (tiltCard) {
+                // Only rotate the cover page card
+                tiltCard.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
+            }
+        });
 
     </script>
 
