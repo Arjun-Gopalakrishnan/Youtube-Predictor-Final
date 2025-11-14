@@ -7,14 +7,10 @@ joblib
 numpy
 pandas
 
-We need scikit-learn for loading the model and scaler,
-
-which are typically created with it.
+We need scikit-learn for loading the model and scaler
 
 scikit-learn
 
-NEW: Add Gunicorn
-
-This is a professional web server that Render will use to run your app.
+Gunicorn is the professional web server for Render
 
 gunicorn
