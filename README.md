@@ -4,7 +4,7 @@ YouTube View Count Predictor
 
 You can try the live, deployed version of this application here:
 
-https://youtube-predictor-final.onrender.com
+[https://youtube-predictor-final.onrender.com](https://youtube-predictor-app-7cp3.onrender.com)
 
 (Note: The app runs on a free service, so it may take 30-60 seconds to "wake up" on the first visit.)
 
