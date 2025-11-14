@@ -1,0 +1,20 @@
+This file lists the Python packages required by the application.
+
+Install them all using: pip install -r requirements.txt
+
+flask
+joblib
+numpy
+pandas
+
+We need scikit-learn for loading the model and scaler,
+
+which are typically created with it.
+
+scikit-learn
+
+NEW: Add Gunicorn
+
+This is a professional web server that Render will use to run your app.
+
+gunicorn
