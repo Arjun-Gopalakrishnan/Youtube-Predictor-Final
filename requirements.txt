@@ -1,16 +1,6 @@
-This file lists the Python packages required by the application.
-
-Install them all using: pip install -r requirements.txt
-
-flask
-joblib
-numpy
+Flask
 pandas
-
-We need scikit-learn for loading the model and scaler
-
+numpy
 scikit-learn
-
-Gunicorn is the professional web server for Render
-
+lightgbm
 gunicorn
